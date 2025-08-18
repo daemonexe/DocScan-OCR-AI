@@ -1,24 +1,24 @@
 FROM python:3.10-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
-    poppler-utils \
+    libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
+    poppler-utils \
+    && apt-get clean
 
+# Set working directory
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
+# Copy your app code
 COPY . .
 
-EXPOSE 5000
+# Install Python dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-CMD ["python", "app.py"]
+# Run app with Gunicorn
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
