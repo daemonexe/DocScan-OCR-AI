@@ -1,8 +1,11 @@
+# requirements.txt
 Flask
 flask-cors
-pytesseract
-opencv-python
-pdf2image
-python-dotenv
+Werkzeug
 groq
-gunicorn
+python-dotenv
+opencv-python-headless
+pytesseract
+pdf2image
+pytz
+pandas
