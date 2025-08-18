@@ -14,7 +14,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-UPLOAD_FOLDER = "uploads"
+UPLOAD_FOLDER = "/tmp/uploads"
 ALLOWED_EXT = {'jpg', 'jpeg', 'png', 'pdf'}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -157,3 +157,4 @@ def upload():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
+
