@@ -1,24 +1,19 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    poppler-utils \
-    && apt-get clean
-
-# Set working directory
 WORKDIR /app
 
-# Copy your app code
-COPY . .
+# Install Tesseract OCR engine & poppler-utils (required by pdf2image)
+RUN apt-get update && \
+    apt-get install -y tesseract-ocr poppler-utils && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+COPY requirements.txt requirements.txt
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Run app with Gunicorn
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
+COPY . .
+
+ENV FLASK_APP=app.py
+EXPOSE 5000
+
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
