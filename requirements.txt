@@ -1,0 +1,11 @@
+# requirements.txt
+Flask
+flask-cors
+Werkzeug
+groq
+python-dotenv
+opencv-python-headless
+pytesseract
+pdf2image
+pytz
+pandas
