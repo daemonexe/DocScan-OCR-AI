@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from groq import Groq
 from dotenv import load_dotenv
+import psycopg2
 import cv2
 import pytesseract
 import os
@@ -18,6 +19,7 @@ UPLOAD_FOLDER = "uploads"
 ALLOWED_EXT = {'jpg', 'jpeg', 'png', 'pdf'}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 # ------------------- Groq Integration -----------------------
@@ -110,6 +112,44 @@ def find_table_and_ocr(img_path):
 
     return rows, raw_text
 
+def save_data_db(filename,raw_text, formated_json, table_data):
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO document_metadata (filename, raw_text, table_data, structured_json)
+    VALUES (%s, %s, %s, %s)
+    """, (
+    filename,
+    raw_text,
+    json.dumps(table_data),        # convert Python list to JSON string
+    json.dumps(formated_json)    # convert dict to JSON string
+))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("Inserted successfully")
+
+@app.route('/history', methods=['GET'])
+def get_history():
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM document_metadata ORDER BY id DESC")
+    rows = cur.fetchall()
+    history = [
+        {
+            "id": r[0],
+            "filename": r[1],
+            "raw_text": r[2],
+            "table_data": r[3],         # stays as JSONB/dict
+            "structured_json": r[4],    # stays as JSONB/dict
+            "created_at": r[5].strftime("%Y-%m-%d %H:%M:%S")
+        }
+        for r in rows
+    ]
+    cur.close()
+    return jsonify(history)
 
 # ------------------- Upload Endpoint --------------------------
 @app.route('/upload', methods=['POST'])
@@ -118,6 +158,7 @@ def upload():
         return jsonify({"error": "no file"}), 400
 
     f = request.files['file']
+    fileName = f.filename
     if f.filename == "":
         return jsonify({"error": "empty filename"}), 400
 
@@ -147,6 +188,8 @@ def upload():
             "details": str(e),
             "raw_response": groq_response
         }
+
+    save_data_db(filename,raw_text,structured_json,rows)
 
     return jsonify({
         "raw_text": raw_text,
