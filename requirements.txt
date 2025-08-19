@@ -8,5 +8,6 @@ opencv-python-headless
 pytesseract
 pdf2image
 pytz
-psycopg2
+psycopg2-binary
 pandas
+
